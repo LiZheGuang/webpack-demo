@@ -3,16 +3,42 @@ const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin');  //清理dist
 const entries = require('./src/build/entries.js')
+const getEntry = require('./pageEntry')
 
-
+function getBasePlugs () {
+    var baseWebPackPlugin = []
+    var pages = getEntry('./src/comment/*/index.html')
+    for (var pathname in pages) {
+      var pathInfo = pages[pathname]
+      var pageName = path.basename(pathInfo)
+      var folderName = pathInfo.split('/').splice(-2)[0]
+      var fileName = `${folderName}.html`
+  
+      var conf = {
+            title: 'Output Management',
+            filename: fileName,
+            template:'./src/comment/index/index.html',
+            staticPath: 'mb52-static-parent',
+            inject: true,
+            hash: false,
+            minify:false
+          
+      }
+      if (pathname in entries) {
+        conf.chunks = ['vendor','manifest', pathname]
+      }
+      baseWebPackPlugin.push(new HtmlWebpackPlugin(conf))
+    }
+    return baseWebPackPlugin
+  }
 
 module.exports = {
     entry: entries(),
 
     output: {
         filename: '[name].js',
-        path: __dirname+'/dist/js'
-        // publicPath: '/'
+        path: __dirname+'/dist',
+        publicPath: '/'
     },
     plugins: [
         new CleanWebpackPlugin(['dist']),
@@ -25,15 +51,8 @@ module.exports = {
                 APP_VERSION: JSON.stringify('1.1.2') // const CONSTANTS = { APP_VERSION: '1.1.2' }
             }
         }),
-        new HtmlWebpackPlugin({
-                   title: 'Output Management',
-                   filename: './index/index.html',
-                   template:'./src/comment/index/index.html',
-                   staticPath: 'mb52-static-parent',
-                   inject: true,
-                   hash: false
-                 })
-    ],
+        
+    ].concat(getBasePlugs()),
     module: {
         rules: [
             {
